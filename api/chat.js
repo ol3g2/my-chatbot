@@ -17,7 +17,7 @@ module.exports = async function handler(req, res) {
         "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`
       },
       body: JSON.stringify({
-        model: "qwen/qwen-2.5-7b-instruct:free",
+        model: "openrouter/auto",
         messages: [
           { role: "system", content: "You are a helpful, concise AI assistant. Be friendly and clear." },
           ...messages
