@@ -33,6 +33,7 @@ module.exports = async function handler(req, res) {
     );
 
     const data = await response.json();
+    console.log("Gemini response:", JSON.stringify(data));
     const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || JSON.stringify(data);
     res.status(200).json({ reply });
   } catch (e) {
