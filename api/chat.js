@@ -17,7 +17,7 @@ module.exports = async function handler(req, res) {
         "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`
       },
       body: JSON.stringify({
-        model: "google/gemma-3-4b-it:free",
+        model: "deepseek/deepseek-r1-distill-qwen-7b:free",
         messages: [
           { role: "system", content: "You are a helpful, concise AI assistant. Be friendly and clear." },
           ...messages
