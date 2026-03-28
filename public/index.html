@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>AI Chat</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Georgia, serif;
+      background: #fff;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    #header {
+      padding: 16px 18px 12px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    #avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: #1a1a1a;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    #header-name { font-weight: 600; font-size: 15px; color: #1a1a1a; }
+    #header-status { font-size: 12px; color: #aaa; }
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 18px 14px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    #empty {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #ccc;
+      gap: 8px;
+      font-size: 14px;
+      user-select: none;
+    }
+    .bubble-wrap { display: flex; animation: fadeUp 0.2s ease; }
+    .bubble-wrap.user { justify-content: flex-end; }
+    .bubble-wrap.bot  { justify-content: flex-start; }
+    .bubble {
+      max-width: 78%;
+      padding: 11px 15px;
+      font-size: 15px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .bubble.user { background: #1a1a1a; color: #fff; border-radius: 18px 18px 4px 18px; }
+    .bubble.bot  { background: #f2f2f2; color: #1a1a1a; border-radius: 18px 18px 18px 4px; }
+    #typing { display: none; }
+    #typing.show { display: flex; }
+    #typing {
+      align-items: center; gap: 5px;
+      padding: 12px 16px; background: #f2f2f2;
+      border-radius: 18px 18px 18px 4px; width: fit-content;
+    }
+    .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #aaa; animation: bounce 1.2s infinite;
+    }
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+    #input-area {
+      padding: 10px 12px 20px;
+      border-top: 1px solid #eee;
+      display: flex; gap: 8px; align-items: flex-end;
+      flex-shrink: 0;
+    }
+    #input {
+      flex: 1; border: 1.5px solid #e8e8e8;
+      border-radius: 20px; padding: 10px 14px;
+      font-size: 15px; font-family: Georgia, serif;
+      color: #1a1a1a; background: #fafafa;
+      line-height: 1.5; resize: none;
+      max-height: 120px; overflow-y: auto; outline: none;
+    }
+    #send-btn {
+      width: 42px; height: 42px; border-radius: 50%;
+      border: none; cursor: pointer; background: #e8e8e8;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: background 0.2s;
+    }
+    #send-btn.active { background: #1a1a1a; }
+    @keyframes bounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-6px); }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div id="header">
+    <div id="avatar">
+      <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="5" fill="white"/>
+        <path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="white" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div>
+      <div id="header-name">AI Assistant</div>
+      <div id="header-status">Online</div>
+    </div>
+  </div>
+
+  <div id="messages">
+    <div id="empty">
+      <svg width="40" height="40" fill="none" viewBox="0 0 24 24">
+        <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z" stroke="#ddd" stroke-width="1.5"/>
+        <path d="M8 10h.01M16 10h.01M8 14s1 2 4 2 4-2 4-2" stroke="#ddd" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      Start a conversation
+    </div>
+    <div id="typing">
+      <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+    </div>
+  </div>
+
+  <div id="input-area">
+    <textarea id="input" placeholder="Message…" rows="1"></textarea>
+    <button id="send-btn">
+      <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
+        <path d="M5 12h14M13 6l6 6-6 6" stroke="#bbb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="arrow"/>
+      </svg>
+    </button>
+  </div>
+
+  <script>
+    const messagesEl = document.getElementById("messages");
+    const emptyEl    = document.getElementById("empty");
+    const typingEl   = document.getElementById("typing");
+    const inputEl    = document.getElementById("input");
+    const sendBtn    = document.getElementById("send-btn");
+    const arrowIcon  = document.getElementById("arrow");
+
+    let history = [];
+    let loading  = false;
+
+    function addBubble(role, text) {
+      const wrap = document.createElement("div");
+      wrap.className = `bubble-wrap ${role === "user" ? "user" : "bot"}`;
+      const bubble = document.createElement("div");
+      bubble.className = `bubble ${role === "user" ? "user" : "bot"}`;
+      bubble.textContent = text;
+      wrap.appendChild(bubble);
+      messagesEl.insertBefore(wrap, typingEl);
+    }
+
+    function scrollBottom() {
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function setLoading(on) {
+      loading = on;
+      typingEl.className = on ? "show" : "";
+      document.getElementById("header-status").textContent = on ? "Thinking…" : "Online";
+      const hasText = inputEl.value.trim();
+      sendBtn.className = (!on && hasText) ? "active" : "";
+      arrowIcon.setAttribute("stroke", (!on && hasText) ? "#fff" : "#bbb");
+      scrollBottom();
+    }
+
+    async function send() {
+      const text = inputEl.value.trim();
+      if (!text || loading) return;
+
+      emptyEl.style.display = "none";
+      history.push({ role: "user", content: text });
+      addBubble("user", text);
+      inputEl.value = "";
+      inputEl.style.height = "auto";
+      setLoading(true);
+      scrollBottom();
+
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: history })
+        });
+        const data = await res.json();
+        const reply = data.reply || "Something went wrong.";
+        history.push({ role: "assistant", content: reply });
+        addBubble("bot", reply);
+      } catch (e) {
+        addBubble("bot", "Connection error. Please try again.");
+      }
+
+      setLoading(false);
+      scrollBottom();
+      inputEl.focus();
+    }
+
+    inputEl.addEventListener("input", () => {
+      inputEl.style.height = "auto";
+      inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + "px";
+      const hasText = inputEl.value.trim();
+      sendBtn.className = hasText && !loading ? "active" : "";
+      arrowIcon.setAttribute("stroke", hasText && !loading ? "#fff" : "#bbb");
+    });
+
+    inputEl.addEventListener("keydown", e => {
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
+    });
+
+    sendBtn.addEventListener("click", send);
+  </script>
+</body>
+</html>
