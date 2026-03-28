@@ -18,7 +18,7 @@ module.exports = async function handler(req, res) {
         "anthropic-version": "2023-06-01"
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: "claude-3-haiku-20240307",
         max_tokens: 1000,
         system: "You are a helpful, concise AI assistant. Be friendly and clear.",
         messages
@@ -26,7 +26,8 @@ module.exports = async function handler(req, res) {
     });
 
     const data = await response.json();
-    const reply = data.content?.map(b => b.text).join("") || "Something went wrong.";
+    console.log("Anthropic response:", JSON.stringify(data));
+    const reply = data.content?.[0]?.text || data.error?.message || "Something went wrong.";
     res.status(200).json({ reply });
   } catch (e) {
     res.status(500).json({ error: "Server error: " + e.message });
