@@ -26,7 +26,7 @@ module.exports = async function handler(req, res) {
     });
 
     const data = await response.json();
-    const reply = data.choices?.[0]?.message?.content || "Something went wrong.";
+    const reply = data.choices?.[0]?.message?.content || JSON.stringify(data);
     res.status(200).json({ reply });
   } catch (e) {
     res.status(500).json({ error: "Server error: " + e.message });
